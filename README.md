@@ -1,59 +1,126 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# ERP Portal — Day 1 Foundation
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A full-stack ERP (Enterprise Resource Planning) system being rebuilt from scratch over seven days. This README documents the **Day 1** state: a working Laravel 12 + Vue 3 + Inertia 2 + Tailwind 3 skeleton connected to MySQL and backed up on GitHub.
 
-## About Laravel
+| | |
+| --- | --- |
+| Status | Day 1 of 7 — Foundation |
+| Git checkpoint | `chore: initialize ERP project foundation` |
+| Sign-in URL | not yet (authentication arrives Day 2) |
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## Tech stack
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+| Layer | Technology |
+| --- | --- |
+| Backend | Laravel 12 on PHP 8.2+ |
+| Frontend | Vue 3 (Composition API) + Inertia.js 2 |
+| Styling | Tailwind CSS 3 |
+| Build | Vite 6 (`laravel-vite-plugin` + `@vitejs/plugin-vue`) |
+| Database | MySQL + Eloquent ORM |
+| Tests | PHPUnit (Laravel feature tests) |
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## Prerequisites (check before starting)
 
-## Learning Laravel
+Open PowerShell and run each command. Expected results shown.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```powershell
+git --version        # git version 2.x.x
+php -v               # PHP 8.2.x
+composer --version   # Composer version 2.x.x
+node -v              # v20.11+ (Vite 6 requirement)
+npm -v               # ships with Node
+mysql --version      # mysql Ver 8.x (or MariaDB 10.5+)
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+If a command says `not recognized`, that tool is missing — install it, then re-check.
 
-## Laravel Sponsors
+## Setup (one time, in order)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```powershell
+# 1. Create the project
+cd C:\code
+composer create-project laravel/laravel erp "^12.0"
+cd erp
 
-### Premium Partners
+# 2. Create the database in MySQL
+mysql -u root -p
+#   at the MySQL prompt:
+CREATE DATABASE erp CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+EXIT;
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+# 3. Configure .env (project root): set these lines to your values
+#    DB_CONNECTION=mysql
+#    DB_HOST=127.0.0.1
+#    DB_PORT=3306
+#    DB_DATABASE=erp
+#    DB_USERNAME=root
+#    DB_PASSWORD=your_mysql_password
 
-## Contributing
+# 4. Run the initial migrations (creates users, sessions, cache, jobs tables)
+php artisan migrate
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+# 5. Install the frontend stack
+composer require inertiajs/inertia-laravel
+php artisan inertia:middleware
+npm install
+npm install vue @inertiajs/vue3 @vitejs/plugin-vue tailwindcss@^3.4 postcss autoprefixer @tailwindcss/forms
 
-## Code of Conduct
+# 6. Wire the frontend files (see "Files created on Day 1" below)
+#    vite.config.js, tailwind.config.js, resources/css/app.css,
+#    resources/js/app.js, resources/views/app.blade.php,
+#    resources/js/Pages/Welcome.vue, bootstrap/app.php (inertia alias)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# 7. Point the / route at the Vue page
+#    In routes/web.php replace the default welcome view with:
+#    Inertia::render('Welcome')
+```
 
-## Security Vulnerabilities
+## Run the app (two terminals — keep both open)
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+```powershell
+# Terminal 1: the Laravel web server (backend)
+php artisan serve
 
-## License
+# Terminal 2: Vite dev server (frontend, hot reload)
+npm run dev
+```
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Open http://127.0.0.1:8000 — you should see **"Welcome to the ERP Portal"** centered on a light-gray background.
+
+## Files created on Day 1
+
+| File | Purpose |
+| --- | --- |
+| `vite.config.js` | Bundles the frontend; registers the Vue plugin and `@` alias |
+| `tailwind.config.js` + `postcss.config.js` | Tailwind CSS setup and content scan paths |
+| `resources/css/app.css` | Tailwind directives (`@tailwind base; components; utilities`) |
+| `resources/js/app.js` | Boots Vue + Inertia; maps page names to `resources/js/Pages/*.vue` |
+| `resources/views/app.blade.php` | The single HTML shell that hosts the whole app |
+| `resources/js/Pages/Welcome.vue` | The first page (a Vue component) |
+| `routes/web.php` | Maps `/` to the Vue Welcome page |
+| `bootstrap/app.php` | Middleware config; registers the `inertia` alias |
+| `.env` | Your secrets (database password) — NEVER commit this |
+| `.gitignore` | Protects `.env`, `vendor/`, `node_modules/`, `public/build` from Git |
+
+## Day 1 verification checklist
+
+- [ ] `php artisan migrate` completes ("Database migrations completed successfully")
+- [ ] `php artisan test` — default tests pass (green)
+- [ ] http://127.0.0.1:8000 shows "Welcome to the ERP Portal"
+- [ ] `git status` lists project files but NOT `.env`, `vendor/`, or `node_modules/`
+- [ ] First commit created: `chore: initialize ERP project foundation`
+- [ ] Pushed to GitHub (`git push -u origin main`) and visible in the Commits page
+
+## Troubleshooting
+
+| Symptom | Cause & fix |
+| --- | --- |
+| Page shows the default Laravel "welcome" screen | `routes/web.php` still returns `view('welcome')` — change it to `Inertia::render('Welcome')`, save, hard-refresh (Ctrl+F5) |
+| Vue page loads but unstyled / asset 404 | `npm run dev` is not running — start it in the second terminal |
+| `fatal: not a git repository` | Project not initialized — run `git init` inside `C:\code\erp` |
+| `SQLSTATE[HY000] [1045] Access denied` | Wrong credentials in `.env` — check `DB_USERNAME` / `DB_PASSWORD` |
+| Port 8000 already in use | `php artisan serve --port=8001` and open that port instead |
+
+## Next step
+
+Day 2 — authentication and roles: login at `/erp/login`, Admin/Manager/Staff roles, permissions, the shared ERP layout with sidebar, and the first dashboard.
