@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\AdminAuthenticated;
+use App\Http\Middleware\AdminGuest;
+use App\Http\Middleware\EnsurePermission;
+use App\Http\Middleware\HandleInertiaRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,9 +16,15 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->alias([
-            'inertia' => \App\Http\Middleware\HandleInertiaRequests::class,
+            'admin.auth' => AdminAuthenticated::class,
+            'admin.guest' => AdminGuest::class,
+            'permission' => EnsurePermission::class,
+        ]);
+
+        $middleware->web(append: [
+            HandleInertiaRequests::class,
         ]);
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
