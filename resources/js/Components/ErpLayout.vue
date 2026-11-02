@@ -25,15 +25,12 @@ const nav = [
             { label: 'Roles & Permissions', href: '/erp/roles', permission: 'roles.manage', icon: '🔐', soon: false },
         ],
     },
-    // Modules that arrive on Days 3-7. They stay visible but disabled, so the
-    // layout shows the shape of the app without linking to routes that do not
-    // exist yet. Flip `soon` to false and set the real href on that day.
     {
         section: 'Inventory',
         items: [
-            { label: 'Products', href: '#', permission: 'inventory.view', icon: '📦', soon: true },
-            { label: 'Categories', href: '#', permission: 'inventory.view', icon: '🗂️', soon: true },
-            { label: 'Stock', href: '#', permission: 'inventory.view', icon: '⚖️', soon: true },
+            { label: 'Products', href: '/erp/inventory/products', permission: 'inventory.view', icon: '📦', soon: false },
+            { label: 'Categories', href: '/erp/inventory/categories', permission: 'inventory.view', icon: '🗂️', soon: false },
+            { label: 'Stock', href: '/erp/inventory/stock', permission: 'inventory.view', icon: '⚖️', soon: false },
         ],
     },
     {

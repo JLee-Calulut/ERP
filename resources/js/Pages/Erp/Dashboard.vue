@@ -42,6 +42,8 @@ const unavailableActions = computed(() => props.quickActions.filter((action) => 
             <StatCard label="Roles" :value="stats.roles" icon="🔐" tone="violet" hint="Admin, Manager, Staff" />
             <StatCard label="Permissions" :value="stats.permissions" icon="🔑" tone="amber" hint="Attached to roles" />
             <StatCard label="Administrators" :value="stats.administrators" icon="👑" tone="green" hint="Users with the admin role" />
+            <StatCard label="Low Stock" :value="stats.lowStock" icon="⚠️" tone="red" hint="Products at or below threshold" />
+            <StatCard label="Products" :value="stats.products" icon="📦" tone="amber" hint="Inventory module" />
         </div>
 
         <Card title="Quick actions" class="mt-6">
@@ -73,16 +75,6 @@ const unavailableActions = computed(() => props.quickActions.filter((action) => 
                         <span class="block text-[10px] text-slate-400">No access</span>
                     </span>
                 </button>
-            </div>
-        </Card>
-
-        <Card title="Module activity" class="mt-6">
-            <div class="rounded-xl border border-dashed border-slate-300 px-4 py-10 text-center">
-                <p class="text-2xl">🕓</p>
-                <p class="mt-2 text-sm font-medium text-slate-600">No activity yet</p>
-                <p class="mt-1 text-xs text-slate-400">
-                    Inventory, sales, purchasing and accounting activity appears here once those modules arrive (Days 3-7).
-                </p>
             </div>
         </Card>
 

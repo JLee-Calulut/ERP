@@ -30,8 +30,8 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Erp/Dashboard')
-                ->has('stats', 4)
-                ->has('quickActions', 2));
+                ->has('stats', 6)
+                ->has('quickActions', 4));
     }
 
     public function test_dashboard_kpis_reflect_the_seeded_baseline(): void
@@ -50,6 +50,21 @@ class DashboardTest extends TestCase
                 ->where('stats.roles', 3)
                 ->where('stats.permissions', 13)
                 ->where('stats.administrators', 1));
+    }
+
+    public function test_dashboard_kpis_reflect_the_seeded_inventory(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+
+        $this->actingAs($user)
+            ->get('/erp/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Erp/Dashboard')
+                // InventorySeeder: 12 products, 4 of them at or below threshold.
+                ->where('stats.products', 12)
+                ->where('stats.lowStock', 4));
     }
 
     public function test_dashboard_quick_actions_are_available_to_an_admin(): void
