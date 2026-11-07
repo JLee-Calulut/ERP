@@ -1,0 +1,36 @@
+<?php
+
+namespace App\Http\Requests\Admin;
+
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+
+class CustomerRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+
+    public function rules(): array
+    {
+        $customerId = $this->route('customer')?->id;
+
+        return [
+            'name' => ['required', 'string', 'max:255'],
+            'email' => [
+                'nullable',
+                'email',
+                'max:255',
+                Rule::unique('customers', 'email')->ignore($customerId),
+            ],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'address_line1' => ['nullable', 'string', 'max:255'],
+            'address_city' => ['nullable', 'string', 'max:120'],
+            'address_state' => ['nullable', 'string', 'max:120'],
+            'address_postal_code' => ['nullable', 'string', 'max:20'],
+            'address_country' => ['nullable', 'string', 'max:120'],
+        ];
+    }
+}

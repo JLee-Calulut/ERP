@@ -30,7 +30,9 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Erp/Dashboard')
-                ->has('stats', 6)
+                ->has('stats', 9)
+                ->has('revenueTrend.labels', 6)
+                ->has('recentActivity')
                 ->has('quickActions', 4));
     }
 
@@ -64,7 +66,25 @@ class DashboardTest extends TestCase
                 ->component('Erp/Dashboard')
                 // InventorySeeder: 12 products, 4 of them at or below threshold.
                 ->where('stats.products', 12)
-                ->where('stats.lowStock', 4));
+                ->where('stats.lowStock', 5));
+    }
+
+    public function test_dashboard_kpis_reflect_seeded_sales_data(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+
+        $this->actingAs($user)
+            ->get('/erp/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Erp/Dashboard')
+                ->where('stats.revenue', 1986)
+                ->where('stats.orders', 7)
+                ->where('stats.customers', 4)
+                ->where('stats.products', 12)
+                ->has('revenueTrend.labels', 6)
+                ->has('revenueTrend.values', 6));
     }
 
     public function test_dashboard_quick_actions_are_available_to_an_admin(): void
@@ -85,6 +105,21 @@ class DashboardTest extends TestCase
                 ->where('quickActions.1.href', '/erp/roles'));
     }
 
+    public function test_dashboard_quick_action_create_sale_is_visible_for_managers(): void
+    {
+        $manager = User::factory()->create();
+        $manager->assignRole('manager');
+
+        $this->actingAs($manager)
+            ->get('/erp/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Erp/Dashboard')
+                ->where('quickActions.0.label', 'Create sale')
+                ->where('quickActions.0.available', true)
+                ->where('quickActions.0.href', '/erp/sales/orders/create'));
+    }
+
     public function test_dashboard_quick_actions_are_unavailable_to_staff(): void
     {
         $user = User::factory()->create();
@@ -98,7 +133,9 @@ class DashboardTest extends TestCase
                 ->where('quickActions.0.available', false)
                 ->where('quickActions.0.href', null)
                 ->where('quickActions.1.available', false)
-                ->where('quickActions.1.href', null));
+                ->where('quickActions.1.href', null)
+                ->where('quickActions.2.available', false));
+
     }
 
     public function test_dashboard_counts_roles_and_permissions_added_later(): void
@@ -116,5 +153,17 @@ class DashboardTest extends TestCase
                 ->component('Erp/Dashboard')
                 ->where('stats.roles', 4)
                 ->where('stats.permissions', 13));
+    }
+
+    public function test_dashboard_activity_feed_includes_sales_and_stock_history(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+
+        $this->actingAs($user)
+            ->get('/erp/dashboard')
+            ->assertOk()
+            ->assertSee('Sales order #', false)
+            ->assertSee('Stock received', false);
     }
 }

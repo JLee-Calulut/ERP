@@ -110,5 +110,7 @@ class DatabaseSeeder extends Seeder
         $staffUser->assignRole('staff');
 
         $this->call(InventorySeeder::class);
+
+        $this->call(SalesSeeder::class);
     }
 }

@@ -20,6 +20,8 @@ class DashboardController extends Controller
                 'roles' => $user->roles->pluck('name')->all(),
             ],
             'stats' => $service->stats(),
+            'revenueTrend' => $service->revenueTrend(),
+            'recentActivity' => $service->recentActivity(),
             'quickActions' => $service->quickActions(),
         ]);
     }

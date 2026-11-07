@@ -4,10 +4,13 @@ import { Head, Link, usePage } from '@inertiajs/vue3';
 import ErpLayout from '@/Components/ErpLayout.vue';
 import Card from '@/Components/Cards/Card.vue';
 import StatCard from '@/Components/Cards/StatCard.vue';
+import RevenueTrend from '@/Components/Charts/RevenueTrend.vue';
 
 const props = defineProps({
     user: { type: Object, required: true },
     stats: { type: Object, required: true },
+    revenueTrend: { type: Object, required: true },
+    recentActivity: { type: Array, default: () => [] },
     quickActions: { type: Array, default: () => [] },
 });
 
@@ -44,6 +47,36 @@ const unavailableActions = computed(() => props.quickActions.filter((action) => 
             <StatCard label="Administrators" :value="stats.administrators" icon="👑" tone="green" hint="Users with the admin role" />
             <StatCard label="Low Stock" :value="stats.lowStock" icon="⚠️" tone="red" hint="Products at or below threshold" />
             <StatCard label="Products" :value="stats.products" icon="📦" tone="amber" hint="Inventory module" />
+            <StatCard label="Customers" :value="stats.customers" icon="👥" tone="violet" hint="Customer accounts" />
+            <StatCard label="Revenue" :value="stats.revenue.toLocaleString()" icon="💰" tone="green" hint="Completed sales" />
+            <StatCard label="Orders" :value="stats.orders" icon="🛒" tone="blue" hint="Active sales orders" />
+        </div>
+
+        <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+            <div class="xl:col-span-2">
+                <Card title="Revenue trend">
+                    <RevenueTrend :labels="revenueTrend.labels" :values="revenueTrend.values" />
+                </Card>
+            </div>
+
+            <Card title="Recent activity">
+                <div v-if="recentActivity.length === 0" class="rounded-xl border border-dashed border-slate-300 px-4 py-10 text-center">
+                    <p class="text-2xl">🕓</p>
+                    <p class="mt-2 text-sm font-medium text-slate-600">No activity yet</p>
+                    <p class="mt-1 text-xs text-slate-400">
+                        Stock movements and sales will appear here as you use the ERP.
+                    </p>
+                </div>
+                <ul v-else class="space-y-3">
+                    <li v-for="(entry, index) in recentActivity" :key="index" class="flex items-start gap-3 text-sm">
+                        <span class="mt-0.5">{{ entry.icon }}</span>
+                        <div class="min-w-0">
+                            <p class="text-slate-700">{{ entry.message }}</p>
+                            <p class="text-xs text-slate-400">{{ entry.time }}</p>
+                        </div>
+                    </li>
+                </ul>
+            </Card>
         </div>
 
         <Card title="Quick actions" class="mt-6">

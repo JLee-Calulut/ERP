@@ -36,9 +36,9 @@ const nav = [
     {
         section: 'Sales',
         items: [
-            { label: 'Customers', href: '#', permission: 'sales.view', icon: '👥', soon: true },
-            { label: 'Orders', href: '#', permission: 'sales.view', icon: '🛒', soon: true },
-            { label: 'Invoices', href: '#', permission: 'sales.view', icon: '🧾', soon: true },
+            { label: 'Customers', href: '/erp/sales/customers', permission: 'sales.view', icon: '👥', soon: false },
+            { label: 'Orders', href: '/erp/sales/orders', permission: 'sales.view', icon: '🛒', soon: false },
+            { label: 'Invoices', href: '/erp/sales/invoices', permission: 'sales.view', icon: '🧾', soon: false },
         ],
     },
     {

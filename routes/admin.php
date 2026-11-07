@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Admin\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\CustomerController;
+use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\SalesOrderController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -111,6 +114,52 @@ Route::prefix('erp')->name('erp.')->group(function () {
 
             Route::delete('inventory/stock', [StockController::class, 'destroy'])
                 ->name('inventory.stock.destroy');
+        });
+
+        Route::middleware('permission:sales.manage')->group(function () {
+            Route::get('sales/customers/create', [CustomerController::class, 'create'])
+                ->name('sales.customers.create');
+
+            Route::post('sales/customers', [CustomerController::class, 'store'])
+                ->name('sales.customers.store');
+
+            Route::get('sales/customers/{customer}/edit', [CustomerController::class, 'edit'])
+                ->name('sales.customers.edit');
+
+            Route::put('sales/customers/{customer}', [CustomerController::class, 'update'])
+                ->name('sales.customers.update');
+
+            Route::delete('sales/customers/{customer}', [CustomerController::class, 'destroy'])
+                ->name('sales.customers.destroy');
+
+            Route::get('sales/orders/create', [SalesOrderController::class, 'create'])
+                ->name('sales.orders.create');
+
+            Route::post('sales/orders', [SalesOrderController::class, 'store'])
+                ->name('sales.orders.store');
+
+            Route::patch('sales/orders/{order}/status', [SalesOrderController::class, 'updateStatus'])
+                ->name('sales.orders.status');
+
+            Route::post('sales/orders/{order}/invoice', [InvoiceController::class, 'store'])
+                ->name('sales.invoices.store');
+        });
+
+        Route::middleware('permission:sales.view')->group(function () {
+            Route::get('sales/customers', [CustomerController::class, 'index'])
+                ->name('sales.customers.index');
+
+            Route::get('sales/orders', [SalesOrderController::class, 'index'])
+                ->name('sales.orders.index');
+
+            Route::get('sales/orders/{order}', [SalesOrderController::class, 'show'])
+                ->name('sales.orders.show');
+
+            Route::get('sales/invoices', [InvoiceController::class, 'index'])
+                ->name('sales.invoices.index');
+
+            Route::get('sales/invoices/{invoice}', [InvoiceController::class, 'show'])
+                ->name('sales.invoices.show');
         });
 
         Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
