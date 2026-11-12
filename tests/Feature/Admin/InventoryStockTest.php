@@ -71,7 +71,7 @@ class InventoryStockTest extends TestCase
                 ->has('products', 12)
                 // 12 opening movements + the movements recorded by SalesSeeder
                 // + the seed receipt booked for the TechSource purchase order.
-                ->has('transactions', 35)
+                ->has('transactions', 38)
                 ->has('types', 3));
     }
 

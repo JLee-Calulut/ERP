@@ -2,13 +2,15 @@
 
 namespace App\Services;
 
-use App\Models\Permission;
-use App\Models\Role;
-use App\Models\User;
-use App\Models\Product;
 use App\Models\Customer;
+use App\Models\Permission;
+use App\Models\Product;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseReceipt;
+use App\Models\Role;
 use App\Models\SalesOrder;
 use App\Models\StockTransaction;
+use App\Models\User;
 use Illuminate\Support\Collection;
 
 class DashboardService
@@ -30,6 +32,12 @@ class DashboardService
             'customers' => Customer::count(),
             'revenue' => (float) SalesOrder::where('status', SalesOrder::STATUS_COMPLETED)->sum('total'),
             'orders' => SalesOrder::where('status', '!=', SalesOrder::STATUS_CANCELLED)->count(),
+            'openPurchaseOrders' => PurchaseOrder::whereIn('status', [
+                PurchaseOrder::STATUS_DRAFT,
+                PurchaseOrder::STATUS_CONFIRMED,
+            ])->count(),
+            'pendingPurchaseValue' => (float) PurchaseOrder::where('status', PurchaseOrder::STATUS_CONFIRMED)
+                ->sum('total'),
         ];
     }
 
@@ -43,6 +51,7 @@ class DashboardService
             ['label' => 'Roles & permissions', 'icon' => '🔐', 'permission' => 'roles.manage', 'href' => '/erp/roles'],
             ['label' => 'Create sale', 'icon' => '🛒', 'permission' => 'sales.manage', 'href' => '/erp/sales/orders/create'],
             ['label' => 'Receive stock', 'icon' => '📥', 'permission' => 'inventory.manage', 'href' => '/erp/inventory/stock/create'],
+            ['label' => 'Create purchase order', 'icon' => '🚚', 'permission' => 'purchasing.manage', 'href' => '/erp/purchasing/orders/create'],
             ['label' => 'Manage products', 'icon' => '📦', 'permission' => 'inventory.manage', 'href' => '/erp/inventory/products'],
         ];
 
@@ -88,22 +97,17 @@ class DashboardService
 
     public function recentActivity(int $limit = 10): array
     {
-        // Reserve half of the feed for each source, otherwise a busy stock
-        // ledger (or a busy sales day) can push the other source out entirely.
-        $share = max(1, intdiv($limit + 1, 2));
+        // Give each source a fair share of the feed so a busy stock ledger
+        // (or a busy sales day) cannot push the other history out entirely.
+        $share = max(1, (int) ceil($limit / 3));
 
         $stockFeed = $this->stockActivity($share);
         $salesFeed = $this->salesActivity($share);
-
-        // If one source is shorter than its share, widen both queries so the
-        // feed still fills up.
-        if ($stockFeed->count() + $salesFeed->count() < $limit) {
-            $stockFeed = $this->stockActivity($limit);
-            $salesFeed = $this->salesActivity($limit);
-        }
+        $receiptFeed = $this->purchaseActivity($share);
 
         return $stockFeed
             ->concat($salesFeed)
+            ->concat($receiptFeed)
             ->sortByDesc('timestamp')
             ->take($limit)
             ->values()
@@ -159,6 +163,27 @@ class DashboardService
                         .' — $'.number_format($order->total, 2),
                     'time' => $at->diffForHumans(),
                     'verb' => 'created',
+                ];
+            });
+    }
+
+    private function purchaseActivity(int $limit): Collection
+    {
+        return PurchaseReceipt::with('purchaseOrder.supplier')
+            ->latest('received_at')
+            ->limit($limit)
+            ->get()
+            ->map(function (PurchaseReceipt $receipt) {
+                $at = $receipt->received_at ?? $receipt->created_at;
+                $supplier = $receipt->purchaseOrder?->supplier?->name ?? 'Unknown supplier';
+
+                return [
+                    'timestamp' => $at,
+                    'icon' => '📥',
+                    'message' => "PO #{$receipt->purchase_order_id} received from {$supplier}"
+                        .' — $'.number_format($receipt->total, 2),
+                    'time' => $at->diffForHumans(),
+                    'verb' => 'received',
                 ];
             });
     }

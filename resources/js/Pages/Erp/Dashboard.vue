@@ -50,6 +50,8 @@ const unavailableActions = computed(() => props.quickActions.filter((action) => 
             <StatCard label="Customers" :value="stats.customers" icon="👥" tone="violet" hint="Customer accounts" />
             <StatCard label="Revenue" :value="stats.revenue.toLocaleString()" icon="💰" tone="green" hint="Completed sales" />
             <StatCard label="Orders" :value="stats.orders" icon="🛒" tone="blue" hint="Active sales orders" />
+            <StatCard label="Open POs" :value="stats.openPurchaseOrders" icon="🚚" tone="blue" hint="Draft + confirmed" />
+            <StatCard label="Pending PO Value" :value="'$' + stats.pendingPurchaseValue.toLocaleString()" icon="💸" tone="blue" hint="Confirmed orders not yet received" />
         </div>
 
         <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">

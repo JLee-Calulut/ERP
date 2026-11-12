@@ -30,7 +30,7 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertInertia(fn (Assert $page) => $page
                 ->component('Erp/Dashboard')
-                ->has('stats', 9)
+                ->has('stats', 11)
                 ->has('revenueTrend.labels', 6)
                 ->has('recentActivity')
                 ->has('quickActions', 4));
@@ -66,7 +66,7 @@ class DashboardTest extends TestCase
                 ->component('Erp/Dashboard')
                 // InventorySeeder: 12 products, 4 of them at or below threshold.
                 ->where('stats.products', 12)
-                ->where('stats.lowStock', 5));
+                ->where('stats.lowStock', 4));
     }
 
     public function test_dashboard_kpis_reflect_seeded_sales_data(): void
@@ -83,6 +83,26 @@ class DashboardTest extends TestCase
                 ->where('stats.orders', 7)
                 ->where('stats.customers', 4)
                 ->where('stats.products', 12)
+                ->has('revenueTrend.labels', 6)
+                ->has('revenueTrend.values', 6));
+    }
+
+    public function test_dashboard_kpis_reflect_seeded_sales_and_purchasing_data(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+
+        $this->actingAs($user)
+            ->get('/erp/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Erp/Dashboard')
+                ->where('stats.revenue', 1986)
+                ->where('stats.orders', 7)
+                ->where('stats.customers', 4)
+                ->where('stats.products', 12)
+                ->where('stats.openPurchaseOrders', 4)
+                ->where('stats.pendingPurchaseValue', 1060)
                 ->has('revenueTrend.labels', 6)
                 ->has('revenueTrend.values', 6));
     }
@@ -135,7 +155,22 @@ class DashboardTest extends TestCase
                 ->where('quickActions.1.available', false)
                 ->where('quickActions.1.href', null)
                 ->where('quickActions.2.available', false));
+    }
 
+    public function test_dashboard_quick_action_create_purchase_order_is_visible_for_managers(): void
+    {
+        $manager = User::factory()->create();
+        $manager->assignRole('manager');
+
+        $this->actingAs($manager)
+            ->get('/erp/dashboard')
+            ->assertOk()
+            ->assertInertia(fn (Assert $page) => $page
+                ->component('Erp/Dashboard')
+                ->where('quickActions.0.label', 'Create sale')
+                ->where('quickActions.2.label', 'Create purchase order')
+                ->where('quickActions.2.available', true)
+                ->where('quickActions.2.href', '/erp/purchasing/orders/create'));
     }
 
     public function test_dashboard_counts_roles_and_permissions_added_later(): void
@@ -165,5 +200,18 @@ class DashboardTest extends TestCase
             ->assertOk()
             ->assertSee('Sales order #', false)
             ->assertSee('Stock received', false);
+    }
+
+    public function test_dashboard_activity_feed_includes_purchasing_history(): void
+    {
+        $user = User::factory()->create();
+        $user->assignRole('admin');
+
+        $this->actingAs($user)
+            ->get('/erp/dashboard')
+            ->assertOk()
+            ->assertSee('Sales order #', false)
+            ->assertSee('Stock received', false)
+            ->assertSee('received from', false);
     }
 }

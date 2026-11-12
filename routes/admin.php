@@ -10,6 +10,9 @@ use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\UserController;
+use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\PurchaseOrderController;
+use App\Http\Controllers\Admin\PurchaseReceiptController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('erp')->name('erp.')->group(function () {
@@ -160,6 +163,55 @@ Route::prefix('erp')->name('erp.')->group(function () {
 
             Route::get('sales/invoices/{invoice}', [InvoiceController::class, 'show'])
                 ->name('sales.invoices.show');
+        });
+
+        Route::middleware('permission:purchasing.manage')->group(function () {
+            Route::get('purchasing/suppliers/create', [SupplierController::class, 'create'])
+                ->name('purchasing.suppliers.create');
+
+            Route::post('purchasing/suppliers', [SupplierController::class, 'store'])
+                ->name('purchasing.suppliers.store');
+
+            Route::get('purchasing/suppliers/{supplier}/edit', [SupplierController::class, 'edit'])
+                ->name('purchasing.suppliers.edit');
+
+            Route::put('purchasing/suppliers/{supplier}', [SupplierController::class, 'update'])
+                ->name('purchasing.suppliers.update');
+
+            Route::delete('purchasing/suppliers/{supplier}', [SupplierController::class, 'destroy'])
+                ->name('purchasing.suppliers.destroy');
+
+            Route::get('purchasing/orders/create', [PurchaseOrderController::class, 'create'])
+                ->name('purchasing.orders.create');
+
+            Route::post('purchasing/orders', [PurchaseOrderController::class, 'store'])
+                ->name('purchasing.orders.store');
+
+            Route::patch('purchasing/orders/{purchaseOrder}/status', [PurchaseOrderController::class, 'updateStatus'])
+                ->name('purchasing.orders.status');
+
+            Route::post('purchasing/orders/{purchaseOrder}/receipts', [PurchaseReceiptController::class, 'store'])
+                ->name('purchasing.receipts.store');
+
+            Route::delete('purchasing/orders/{purchaseOrder}', [PurchaseOrderController::class, 'destroy'])
+                ->name('purchasing.orders.destroy');
+        });
+
+        Route::middleware('permission:purchasing.view')->group(function () {
+            Route::get('purchasing/suppliers', [SupplierController::class, 'index'])
+                ->name('purchasing.suppliers.index');
+
+            Route::get('purchasing/orders', [PurchaseOrderController::class, 'index'])
+                ->name('purchasing.orders.index');
+
+            Route::get('purchasing/orders/{purchaseOrder}', [PurchaseOrderController::class, 'show'])
+                ->name('purchasing.orders.show');
+
+            Route::get('purchasing/receipts', [PurchaseReceiptController::class, 'index'])
+                ->name('purchasing.receipts.index');
+
+            Route::get('purchasing/receipts/{purchaseReceipt}', [PurchaseReceiptController::class, 'show'])
+                ->name('purchasing.receipts.show');
         });
 
         Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])

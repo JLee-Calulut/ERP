@@ -44,9 +44,9 @@ const nav = [
     {
         section: 'Purchasing',
         items: [
-            { label: 'Suppliers', href: '#', permission: 'purchasing.view', icon: '🏭', soon: true },
-            { label: 'Purchase Orders', href: '#', permission: 'purchasing.view', icon: '📋', soon: true },
-            { label: 'Receipts', href: '#', permission: 'purchasing.view', icon: '📥', soon: true },
+            { label: 'Suppliers', href: '/erp/purchasing/suppliers', permission: 'purchasing.view', icon: '🏭', soon: false },
+            { label: 'Purchase Orders', href: '/erp/purchasing/orders', permission: 'purchasing.view', icon: '📋', soon: false },
+            { label: 'Receipts', href: '/erp/purchasing/receipts', permission: 'purchasing.view', icon: '📥', soon: false },
         ],
     },
     {
