@@ -21,4 +21,9 @@ class InvoicePolicy
     {
         return $user->hasPermission('sales.manage');
     }
+
+    public function post(User $user, Invoice $invoice): bool
+    {
+        return $user->hasPermission('accounting.manage');
+    }
 }

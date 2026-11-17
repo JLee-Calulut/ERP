@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Admin\PurchaseReceiptRequest;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseReceipt;
+use App\Services\AccountingService;
 use App\Services\PurchasingService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -41,7 +42,7 @@ class PurchaseReceiptController extends Controller
     {
         Gate::authorize('view', $purchaseReceipt);
 
-        $purchaseReceipt->load('purchaseOrder.supplier', 'receiver', 'items.purchaseOrderItem.product');
+        $purchaseReceipt->load('purchaseOrder.supplier', 'receiver', 'items.purchaseOrderItem.product', 'journalEntry');
 
         return Inertia::render('Erp/Purchasing/Receipts/Show', [
             'receipt' => [
@@ -51,6 +52,9 @@ class PurchaseReceiptController extends Controller
                 'received_by' => $purchaseReceipt->receiver?->name,
                 'received_at' => $purchaseReceipt->received_at?->toDateTimeString(),
                 'received_at_readable' => $purchaseReceipt->received_at?->diffForHumans(),
+                'posted' => $purchaseReceipt->isPosted(),
+                'journal_entry_number' => $purchaseReceipt->journalEntry?->entry_number,
+                'posted_at_readable' => $purchaseReceipt->posted_at?->diffForHumans(),
                 'purchase_order' => $purchaseReceipt->purchaseOrder ? [
                     'id' => $purchaseReceipt->purchaseOrder->id,
                     'status' => $purchaseReceipt->purchaseOrder->status,
@@ -74,6 +78,17 @@ class PurchaseReceiptController extends Controller
                     ->values(),
             ],
         ]);
+    }
+
+    public function post(PurchaseReceipt $purchaseReceipt, AccountingService $service): RedirectResponse
+    {
+        Gate::authorize('post', $purchaseReceipt);
+
+        $entry = $service->postPurchaseReceipt($purchaseReceipt, auth()->user());
+
+        return redirect()
+            ->route('erp.purchasing.receipts.show', $purchaseReceipt)
+            ->with('success', "Purchase receipt #{$purchaseReceipt->id} posted to accounting as {$entry->entry_number}.");
     }
 
     public function store(PurchaseOrder $purchaseOrder, PurchaseReceiptRequest $request, PurchasingService $service): RedirectResponse

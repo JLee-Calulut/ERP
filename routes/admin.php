@@ -1,18 +1,22 @@
 <?php
 
+use App\Http\Controllers\Admin\AccountController;
 use App\Http\Controllers\Admin\AuthenticatedSessionController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CustomerController;
-use App\Http\Controllers\Admin\InvoiceController;
-use App\Http\Controllers\Admin\SalesOrderController;
-use App\Http\Controllers\Admin\ProductController;
-use App\Http\Controllers\Admin\StockController;
 use App\Http\Controllers\Admin\DashboardController;
-use App\Http\Controllers\Admin\RoleController;
-use App\Http\Controllers\Admin\UserController;
-use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\GeneralLedgerController;
+use App\Http\Controllers\Admin\InvoiceController;
+use App\Http\Controllers\Admin\JournalEntryController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\PurchaseReceiptController;
+use App\Http\Controllers\Admin\RoleController;
+use App\Http\Controllers\Admin\SalesOrderController;
+use App\Http\Controllers\Admin\StockController;
+use App\Http\Controllers\Admin\SupplierController;
+use App\Http\Controllers\Admin\TrialBalanceController;
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('erp')->name('erp.')->group(function () {
@@ -212,6 +216,53 @@ Route::prefix('erp')->name('erp.')->group(function () {
 
             Route::get('purchasing/receipts/{purchaseReceipt}', [PurchaseReceiptController::class, 'show'])
                 ->name('purchasing.receipts.show');
+        });
+
+        Route::middleware('permission:accounting.view')->group(function () {
+            Route::get('accounting/accounts', [AccountController::class, 'index'])
+                ->name('accounting.accounts.index');
+
+            Route::get('accounting/journal', [JournalEntryController::class, 'index'])
+                ->name('accounting.journal.index');
+
+            Route::get('accounting/reports/trial-balance', [TrialBalanceController::class, 'index'])
+                ->name('accounting.reports.trial-balance');
+
+            Route::get('accounting/reports/ledger', [GeneralLedgerController::class, 'index'])
+                ->name('accounting.reports.ledger');
+        });
+
+        Route::middleware('permission:accounting.manage')->group(function () {
+            Route::get('accounting/accounts/create', [AccountController::class, 'create'])
+                ->name('accounting.accounts.create');
+
+            Route::post('accounting/accounts', [AccountController::class, 'store'])
+                ->name('accounting.accounts.store');
+
+            Route::get('accounting/accounts/{account}/edit', [AccountController::class, 'edit'])
+                ->name('accounting.accounts.edit');
+
+            Route::put('accounting/accounts/{account}', [AccountController::class, 'update'])
+                ->name('accounting.accounts.update');
+
+            Route::delete('accounting/accounts/{account}', [AccountController::class, 'destroy'])
+                ->name('accounting.accounts.destroy');
+
+            Route::get('accounting/journal/create', [JournalEntryController::class, 'create'])
+                ->name('accounting.journal.create');
+
+            Route::post('accounting/journal', [JournalEntryController::class, 'store'])
+                ->name('accounting.journal.store');
+
+            // Posting invoices and receipts to accounting is an accounting
+            // operation (not a sales/purchasing one), so it sits behind
+            // accounting.manage even though the actions live on the
+            // invoice/receipt detail pages.
+            Route::post('sales/invoices/{invoice}/post', [InvoiceController::class, 'post'])
+                ->name('sales.invoices.post');
+
+            Route::post('purchasing/receipts/{purchaseReceipt}/post', [PurchaseReceiptController::class, 'post'])
+                ->name('purchasing.receipts.post');
         });
 
         Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])

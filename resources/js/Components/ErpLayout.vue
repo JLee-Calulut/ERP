@@ -52,10 +52,10 @@ const nav = [
     {
         section: 'Accounting',
         items: [
-            { label: 'Chart of Accounts', href: '#', permission: 'accounting.view', icon: '🧮', soon: true },
-            { label: 'Journal', href: '#', permission: 'accounting.view', icon: '📔', soon: true },
-            { label: 'Trial Balance', href: '#', permission: 'accounting.view', icon: '📐', soon: true },
-            { label: 'General Ledger', href: '#', permission: 'accounting.view', icon: '📒', soon: true },
+            { label: 'Chart of Accounts', href: '/erp/accounting/accounts', permission: 'accounting.view', icon: '🧮', soon: false },
+            { label: 'Journal', href: '/erp/accounting/journal', permission: 'accounting.view', icon: '📔', soon: false },
+            { label: 'Trial Balance', href: '/erp/accounting/reports/trial-balance', permission: 'accounting.view', icon: '📐', soon: false },
+            { label: 'General Ledger', href: '/erp/accounting/reports/ledger', permission: 'accounting.view', icon: '📒', soon: false },
         ],
     },
     {

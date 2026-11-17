@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\SalesOrder;
+use App\Services\AccountingService;
 use App\Services\SalesService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -41,7 +42,7 @@ class InvoiceController extends Controller
     {
         Gate::authorize('view', $invoice);
 
-        $invoice->load('salesOrder.customer', 'salesOrder.items.product');
+        $invoice->load('salesOrder.customer', 'salesOrder.items.product', 'journalEntry');
 
         return Inertia::render('Erp/Sales/Invoices/Show', [
             'invoice' => [
@@ -52,6 +53,9 @@ class InvoiceController extends Controller
                 'status_label' => $invoice->statusLabel(),
                 'issued_at' => $invoice->issued_at?->toDateTimeString(),
                 'issued_at_readable' => $invoice->issued_at?->diffForHumans(),
+                'posted' => $invoice->isPosted(),
+                'journal_entry_number' => $invoice->journalEntry?->entry_number,
+                'posted_at_readable' => $invoice->posted_at?->diffForHumans(),
                 'order' => $invoice->salesOrder ? [
                     'id' => $invoice->salesOrder->id,
                     'status_label' => $invoice->salesOrder->statusLabel(),
@@ -72,6 +76,17 @@ class InvoiceController extends Controller
                     ->values() ?? [],
             ],
         ]);
+    }
+
+    public function post(Invoice $invoice, AccountingService $service): RedirectResponse
+    {
+        Gate::authorize('post', $invoice);
+
+        $entry = $service->postInvoice($invoice, auth()->user());
+
+        return redirect()
+            ->route('erp.sales.invoices.show', $invoice)
+            ->with('success', "Invoice {$invoice->invoice_number} posted to accounting as {$entry->entry_number}.");
     }
 
     public function store(SalesOrder $order, SalesService $service): RedirectResponse

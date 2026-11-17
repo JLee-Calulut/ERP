@@ -22,4 +22,8 @@ class PurchaseReceiptPolicy
         return $user->hasPermission('purchasing.manage');
     }
 
+    public function post(User $user, PurchaseReceipt $purchaseReceipt): bool
+    {
+        return $user->hasPermission('accounting.manage');
+    }
 }

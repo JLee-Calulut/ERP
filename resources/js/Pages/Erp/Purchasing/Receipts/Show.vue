@@ -1,11 +1,20 @@
 <script setup>
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import ErpLayout from '@/Components/ErpLayout.vue';
 import Card from '@/Components/Cards/Card.vue';
 
 const props = defineProps({
     receipt: { type: Object, required: true },
 });
+
+const page = usePage();
+const canPost = (page.props.auth?.user?.permissions ?? []).includes('accounting.manage');
+
+const postToAccounting = () => {
+    router.post(`/erp/purchasing/receipts/${props.receipt.id}/post`, {}, {
+        preserveScroll: true,
+    });
+};
 </script>
 
 <template>
@@ -29,6 +38,17 @@ const props = defineProps({
             <span class="inline-flex rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                 Received
             </span>
+            <span
+                v-if="receipt.posted"
+                class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700"
+            >
+                Posted to accounting · {{ receipt.journal_entry_number }}
+            </span>
+            <button
+                v-if="canPost && !receipt.posted"
+                class="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-700"
+                @click="postToAccounting"
+            >Post to accounting</button>
         </div>
 
         <div class="grid grid-cols-1 gap-6 xl:grid-cols-3">
@@ -105,6 +125,18 @@ const props = defineProps({
                         <div class="flex justify-between">
                             <dt class="text-slate-500">Received by</dt>
                             <dd class="text-slate-700">{{ receipt.received_by ?? '—' }}</dd>
+                        </div>
+                        <div class="flex justify-between">
+                            <dt class="text-slate-500">Accounting</dt>
+                            <template v-if="receipt.posted">
+                                <dd class="font-medium text-emerald-700">
+                                    {{ receipt.journal_entry_number }}
+                                    <span v-if="receipt.posted_at_readable" class="block text-xs font-normal text-slate-400">
+                                        posted {{ receipt.posted_at_readable }}
+                                    </span>
+                                </dd>
+                            </template>
+                            <dd v-else class="text-slate-500">Not posted</dd>
                         </div>
                     </dl>
                 </Card>

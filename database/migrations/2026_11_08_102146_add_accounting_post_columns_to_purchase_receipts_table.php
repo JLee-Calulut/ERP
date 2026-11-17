@@ -12,7 +12,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('purchase_receipts', function (Blueprint $table) {
-            //
+            $table->foreignId('journal_entry_id')
+                ->nullable()
+                ->after('received_by')
+                ->constrained('journal_entries')
+                ->nullOnDelete();
+            $table->timestamp('posted_at')->nullable()->after('journal_entry_id');
         });
     }
 
@@ -22,7 +27,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('purchase_receipts', function (Blueprint $table) {
-            //
+            $table->dropConstrainedForeignId('journal_entry_id');
+            $table->dropColumn('posted_at');
         });
     }
 };

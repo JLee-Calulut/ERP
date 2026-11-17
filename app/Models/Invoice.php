@@ -27,6 +27,8 @@ class Invoice extends Model
         'issued_at',
         'total',
         'status',
+        'journal_entry_id',
+        'posted_at',
     ];
 
     protected function casts(): array
@@ -34,12 +36,30 @@ class Invoice extends Model
         return [
             'issued_at' => 'datetime',
             'total' => 'float',
+            'posted_at' => 'datetime',
         ];
     }
 
     public function salesOrder(): BelongsTo
     {
         return $this->belongsTo(SalesOrder::class);
+    }
+
+    public function journalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class);
+    }
+
+    /**
+     * Whether this invoice has already been posted to accounting.
+     *
+     * A posted invoice carries a reference to its journal entry and a
+     * posted_at timestamp; the one-time guard relies on this so the same
+     * invoice can never credit revenue twice.
+     */
+    public function isPosted(): bool
+    {
+        return $this->journal_entry_id !== null || $this->posted_at !== null;
     }
 
     public function statusLabel(): string
