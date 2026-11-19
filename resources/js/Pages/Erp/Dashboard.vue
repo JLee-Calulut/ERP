@@ -24,6 +24,13 @@ const today = new Date().toLocaleDateString(undefined, {
 
 const availableActions = computed(() => props.quickActions.filter((action) => action.available));
 const unavailableActions = computed(() => props.quickActions.filter((action) => !action.available));
+
+const netIncomeLabel = computed(() => {
+    const value = props.stats.netIncome;
+    const formatted = Math.abs(value).toLocaleString();
+
+    return value < 0 ? `-$${formatted}` : `$${formatted}`;
+});
 </script>
 
 <template>
@@ -52,6 +59,7 @@ const unavailableActions = computed(() => props.quickActions.filter((action) => 
             <StatCard label="Orders" :value="stats.orders" icon="🛒" tone="blue" hint="Active sales orders" />
             <StatCard label="Open POs" :value="stats.openPurchaseOrders" icon="🚚" tone="blue" hint="Draft + confirmed" />
             <StatCard label="Pending PO Value" :value="'$' + stats.pendingPurchaseValue.toLocaleString()" icon="💸" tone="blue" hint="Confirmed orders not yet received" />
+            <StatCard label="Net Income" :value="netIncomeLabel" icon="📈" tone="violet" hint="Revenue − expenses" />
         </div>
 
         <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">

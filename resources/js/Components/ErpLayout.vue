@@ -61,7 +61,7 @@ const nav = [
     {
         section: 'Insights',
         items: [
-            { label: 'Reports', href: '#', permission: 'reports.view', icon: '📈', soon: true },
+             { label: 'Reports', href: '/erp/reports', permission: 'reports.view', icon: '📈', soon: false },
         ],
     },
 ];

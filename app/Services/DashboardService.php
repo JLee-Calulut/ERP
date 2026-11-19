@@ -3,10 +3,13 @@
 namespace App\Services;
 
 use App\Models\Customer;
+use App\Models\Invoice;
+use App\Models\JournalEntry;
 use App\Models\Permission;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseReceipt;
+use App\Models\ReportSnapshot;
 use App\Models\Role;
 use App\Models\SalesOrder;
 use App\Models\StockTransaction;
@@ -15,6 +18,16 @@ use Illuminate\Support\Collection;
 
 class DashboardService
 {
+    private InventoryService $inventory;
+
+    private AccountingService $accounting;
+
+    public function __construct(InventoryService $inventory, AccountingService $accounting)
+    {
+        $this->inventory = $inventory;
+        $this->accounting = $accounting;
+    }
+
     /** Number of quick actions the dashboard grid can show at once. */
     private const QUICK_ACTION_SLOTS = 4;
 
@@ -38,6 +51,7 @@ class DashboardService
             ])->count(),
             'pendingPurchaseValue' => (float) PurchaseOrder::where('status', PurchaseOrder::STATUS_CONFIRMED)
                 ->sum('total'),
+            'netIncome' => $this->accounting->netIncome(),
         ];
     }
 
@@ -53,6 +67,7 @@ class DashboardService
             ['label' => 'Receive stock', 'icon' => '📥', 'permission' => 'inventory.manage', 'href' => '/erp/inventory/stock/create'],
             ['label' => 'Create purchase order', 'icon' => '🚚', 'permission' => 'purchasing.manage', 'href' => '/erp/purchasing/orders/create'],
             ['label' => 'Manage products', 'icon' => '📦', 'permission' => 'inventory.manage', 'href' => '/erp/inventory/products'],
+            ['label' => 'Post journal entry', 'icon' => '📔', 'permission' => 'accounting.manage', 'href' => '/erp/accounting/journal/create'],
         ];
 
         return collect($catalog)
@@ -93,26 +108,6 @@ class DashboardService
             'labels' => $labels,
             'values' => $values,
         ];
-    }
-
-    public function recentActivity(int $limit = 10): array
-    {
-        // Give each source a fair share of the feed so a busy stock ledger
-        // (or a busy sales day) cannot push the other history out entirely.
-        $share = max(1, (int) ceil($limit / 3));
-
-        $stockFeed = $this->stockActivity($share);
-        $salesFeed = $this->salesActivity($share);
-        $receiptFeed = $this->purchaseActivity($share);
-
-        return $stockFeed
-            ->concat($salesFeed)
-            ->concat($receiptFeed)
-            ->sortByDesc('timestamp')
-            ->take($limit)
-            ->values()
-            ->map(fn (array $entry) => collect($entry)->except('timestamp')->all())
-            ->all();
     }
 
     private function stockActivity(int $limit): Collection
@@ -186,5 +181,126 @@ class DashboardService
                     'verb' => 'received',
                 ];
             });
+    }
+
+    private function invoiceActivity(int $limit): Collection
+    {
+        return Invoice::query()
+            ->whereNotNull('journal_entry_id')
+            ->latest('posted_at')
+            ->limit($limit)
+            ->get()
+            ->map(function (Invoice $invoice) {
+                $at = $invoice->posted_at ?? $invoice->created_at;
+
+                return [
+                    'timestamp' => $at,
+                    'icon' => '🧾',
+                    'message' => "Invoice {$invoice->invoice_number} posted to accounting",
+                    'time' => $at->diffForHumans(),
+                    'verb' => 'posted',
+                ];
+            });
+    }
+
+    private function postedpurchaseActivity(int $limit): Collection
+    {
+        return PurchaseReceipt::query()
+            ->whereNotNull('journal_entry_id')
+            ->latest('posted_at')
+            ->limit($limit)
+            ->get()
+            ->map(function (PurchaseReceipt $receipt) {
+                $at = $receipt->posted_at ?? $receipt->created_at;
+
+                return [
+                    'timestamp' => $at,
+                    'icon' => '🧾',
+                    'message' => "Purchase receipt #{$receipt->id} posted to accounting",
+                    'time' => $at->diffForHumans(),
+                    'verb' => 'posted',
+                ];
+            });
+    }
+
+    private function journalActivity(int $limit): Collection
+    {
+        return JournalEntry::query()
+            ->whereDoesntHave('invoices')
+            ->whereDoesntHave('purchaseReceipts')
+            ->latest('created_at')
+            ->limit($limit)
+            ->get()
+            ->map(function (JournalEntry $entry) {
+                return [
+                    'timestamp' => $entry->created_at,
+                    'icon' => '📒',
+                    'message' => "Journal entry {$entry->entry_number} posted",
+                    'time' => $entry->created_at->diffForHumans(),
+                    'verb' => 'posted',
+                ];
+            });
+    }
+
+    private function reportActivity(int $limit): Collection
+    {
+        // Each completed run gets its own feed entry. A run is a regeneration
+        // when an earlier completed run of the same type exists, recognised
+        // by the lowest completed id for that type.
+        $firstCompletedIds = ReportSnapshot::query()
+            ->where('status', ReportSnapshot::STATUS_COMPLETED)
+            ->groupBy('type')
+            ->selectRaw('type, MIN(id) as first_id')
+            ->pluck('first_id', 'type');
+
+        return ReportSnapshot::query()
+            ->where('status', ReportSnapshot::STATUS_COMPLETED)
+            ->latest('id')
+            ->limit($limit)
+            ->get()
+            ->map(function (ReportSnapshot $snapshot) use ($firstCompletedIds) {
+                $regenerated = (int) $firstCompletedIds->get($snapshot->type, $snapshot->id) !== $snapshot->id;
+
+                return [
+                    'timestamp' => $snapshot->updated_at,
+                    'icon' => '📊',
+                    'message' => $regenerated
+                        ? "Regenerated {$snapshot->title}"
+                        : "{$snapshot->title} #{$snapshot->id} generated",
+                    'time' => $snapshot->updated_at->diffForHumans(),
+                    'verb' => $regenerated ? 'regenerated' : 'generated',
+                ];
+            });
+    }
+
+    public function recentActivity(int $limit = 12): array
+    {
+        // Reports are sparse but important history, so reserve half of the
+        // feed for them. Split the rest evenly across the six transactional
+        // sources so a busy stock ledger (or a busy sales day) cannot push
+        // the other history out entirely.
+        $reportLimit = max(1, (int) ceil($limit / 2));
+        $share = max(1, intdiv(max(0, $limit - $reportLimit), 6));
+
+        $stockFeed = $this->stockActivity($share);
+        $salesFeed = $this->salesActivity($share);
+        $receiptFeed = $this->purchaseActivity($share);
+        $invoiceFeed = $this->invoiceActivity($share);
+        $postedReceiptFeed = $this->postedpurchaseActivity($share);
+        $journalFeed = $this->journalActivity($share);
+        $reportFeed = $this->reportActivity($reportLimit);
+
+        return $reportFeed
+            ->concat($invoiceFeed)
+            ->concat($postedReceiptFeed)
+            ->concat($journalFeed)
+            ->concat($stockFeed)
+            ->concat($salesFeed)
+            ->concat($receiptFeed)
+            ->sortByDesc('timestamp')
+            ->take($limit)
+            ->values()
+            ->map(fn (array $entry) => collect($entry)->except('timestamp')->all())
+            ->all();
     }
 }

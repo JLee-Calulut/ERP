@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\JournalEntryController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\PurchaseOrderController;
 use App\Http\Controllers\Admin\PurchaseReceiptController;
+use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\RoleController;
 use App\Http\Controllers\Admin\SalesOrderController;
 use App\Http\Controllers\Admin\StockController;
@@ -264,6 +265,29 @@ Route::prefix('erp')->name('erp.')->group(function () {
             Route::post('purchasing/receipts/{purchaseReceipt}/post', [PurchaseReceiptController::class, 'post'])
                 ->name('purchasing.receipts.post');
         });
+
+        Route::middleware('permission:reports.view')->group(function () {
+            Route::get('reports', [ReportController::class, 'index'])
+                ->name('reports.index');
+
+            Route::post('reports', [ReportController::class, 'store'])
+                ->name('reports.store');
+
+            // History must be declared before the {reportSnapshot} wildcard so
+            // "reports/history" is not captured by route-model binding.
+            Route::get('reports/history', [ReportController::class, 'history'])
+                ->name('reports.history');
+
+            Route::get('reports/{reportSnapshot}', [ReportController::class, 'show'])
+                ->name('reports.show');
+
+            Route::post('reports/{reportSnapshot}/regenerate', [ReportController::class, 'regenerate'])
+                ->name('reports.regenerate');
+
+            Route::get('reports/{reportSnapshot}/export', [ReportController::class, 'export'])
+                ->name('reports.export');
+        });
+
 
         Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
             ->name('logout');
